@@ -23,8 +23,9 @@ var runCommand = &cli.Command{
 		if cmd.Args().Len() < 1 {
             return fmt.Errorf("missing command to run")
         }
+        cmdArray := cmd.Args().Slice()
         tty := cmd.Bool("ti")
-        Run(tty, cmd.Args().Get(0))
+        Run(tty, cmdArray)
         return nil
     },
 }

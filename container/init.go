@@ -2,8 +2,11 @@ package container
 
 import (
     "os"
+    "os/exec"
     "fmt"
     "syscall"
+    "io"
+    "strings"
     "path/filepath"
 
     log "github.com/sirupsen/logrus"
@@ -12,14 +15,37 @@ import (
 func RunContainerInitProcess(command string, args []string) error {
     log.Infof("running command: %s", command)
 
+    cmdArray := readClientCommand()
+    if cmdArray == nil || len(cmdArray) == 0 {
+        log.Errorf("run container init proc is trying to read user command, but command is empty")
+    }
+
     // mount fs
     setUpMount()
 
-    argv := []string{command}
-    if err := syscall.Exec(command, argv, os.Environ()); err != nil {
+    // find full path of command in new container rootfs
+    path, err := exec.LookPath(cmdArray[0])
+    if err != nil {
+        log.Errorf("Invalid command name, exec loop path error: %v", err)
+        return err
+    }
+    if err = syscall.Exec(path, cmdArray[0:], os.Environ()); err != nil {
         log.Errorf("Error executing command [%s]: %v", command, err)
     }
     return nil
+}
+
+func readClientCommand() []string {
+    // retrieve read pipe
+    readPipe := os.NewFile(uintptr(3), "pipe")
+    defer readPipe.Close()
+    msg, err := io.ReadAll(readPipe)
+    if err != nil {
+        log.Errorf("Error reading client command in init: %v", err)
+        return nil
+    }
+    msgStr := string(msg)
+    return strings.Split(msgStr, " ")
 }
 
 func setUpMount() {
