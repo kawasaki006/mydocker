@@ -5,18 +5,29 @@ import (
     "strings"
 
     "github.com/kawasaki006/mydocker/container"
+    "github.com/kawasaki006/mydocker/cgroups"
+    "github.com/kawasaki006/mydocker/cgroups/subsystems"
     log "github.com/sirupsen/logrus"
 )
 
-func Run(tty bool, cmdArray []string) {
+func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig) {
     parent, writePipe := container.NewParentProcess(tty)
     if parent == nil {
         log.Errorf("Init process eror")
         return
     }
+
+    // start container proc
     if err := parent.Start(); err != nil {
         log.Error(err)
     }
+
+    // set up cgroup and add new contaier proc in
+    cgroupManager := cgroups.NewCgroupManager("mydocker-cgroup")
+    defer cgroupManager.Destroy()
+    cgroupManager.Set(res)
+    cgroupManager.Apply(parent.Process.Pid)
+
     // send client full command
     sendInitCommand(cmdArray, writePipe)
     // close pipe
@@ -27,7 +38,7 @@ func Run(tty bool, cmdArray []string) {
 }
 
 func sendInitCommand(cmdArray []string, writePipe *os.File) {
-    command := strings.Join(cmdArray, "")
+    command := strings.Join(cmdArray, " ")
     log.Infof("Full command: %s", command)
     writePipe.WriteString(command)
 }
