@@ -10,8 +10,14 @@ import (
     log "github.com/sirupsen/logrus"
 )
 
-func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig) {
-    parent, writePipe := container.NewParentProcess(tty)
+func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, volume, containerName, imageName string) {
+    // TODO: random id generation
+    containerId := "poyocontainer"
+    
+    parent, writePipe := container.NewParentProcess(tty, volume, containerId, imageName)
+    // defer overlayfs cleanup
+    // TODO: volume = " " for now
+    defer container.DeleteWorkspace(containerId, " ")
     if parent == nil {
         log.Errorf("Init process eror")
         return
@@ -34,7 +40,7 @@ func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig) {
     writePipe.Close()
 
     parent.Wait()
-    os.Exit(-1)
+    //os.Exit(-1)
 }
 
 func sendInitCommand(cmdArray []string, writePipe *os.File) {

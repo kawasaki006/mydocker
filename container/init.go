@@ -25,8 +25,9 @@ func RunContainerInitProcess(command string, args []string) error {
 
     // find full path of command in new container rootfs
     path, err := exec.LookPath(cmdArray[0])
+    log.Infof("command is: %s", cmdArray[0])
     if err != nil {
-        log.Errorf("Invalid command name, exec loop path error: %v", err)
+        log.Errorf("Invalid command name, exec look path error: %v", err)
         return err
     }
     if err = syscall.Exec(path, cmdArray[0:], os.Environ()); err != nil {

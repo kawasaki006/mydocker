@@ -42,6 +42,7 @@ func (c *CgroupManager) Set(res *subsystems.ResourceConfig) error {
 
 // remove all subsystems of a manager
 func (c *CgroupManager) Destroy() error {
+    log.Infof("cleaning up cgroup....")
     for _, subSysIns := range c.Subsystems {
         if err := subSysIns.Remove(c.Path); err != nil {
             log.Errorf("error removing cgroup[%s]: %v", c.Path, err)

@@ -6,9 +6,10 @@ import (
     "syscall"
 
     log "github.com/sirupsen/logrus"
+    "github.com/kawasaki006/mydocker/utils"
 )
 
-func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
+func NewParentProcess(tty bool, volume, containerId, imageName string) (*exec.Cmd, *os.File) {
     // initialize pipe: read pipe for init proc to read command string; write pipe for run proc to send command
     readPipe, writePipe, err := os.Pipe()
     if err != nil {
@@ -27,5 +28,9 @@ func NewParentProcess(tty bool) (*exec.Cmd, *os.File) {
     }
     // carry read pipe as extra file
     cmd.ExtraFiles = []*os.File{readPipe}
+    // mount overlay fs
+    NewWorkspace(containerId, imageName, volume)
+    // set mount point as container working dir
+    cmd.Dir = utils.GetMerged(containerId)
     return cmd, writePipe
 }

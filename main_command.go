@@ -31,19 +31,37 @@ var runCommand = &cli.Command{
             Name: "cpuset",
             Usage: "cpuset limit, e.g.: -cpuset 2,4",
 		},
+        &cli.StringFlag{
+            Name: "v",
+            Usage: "volume, e.g.: -v /etc/conf:/etc/conf",
+        },
+        &cli.StringFlag{
+            Name: "name",
+            Usage: "container name, e.g: -name mycontainer",
+        },
 	},
 	Action: func(ctx context.Context, cmd *cli.Command) error {
 		if cmd.Args().Len() < 1 {
             return fmt.Errorf("missing command to run")
         }
+
         cmdArray := cmd.Args().Slice()
+        // image name should be the first arg
+        imageName := cmdArray[0]
+        // extra args
+        cmdArray = cmdArray[1:]
+
+        // flags
         tty := cmd.Bool("ti")
         res := &subsystems.ResourceConfig{
             MemoryLimit: cmd.String("m"),
             CpuSet:      cmd.String("cpuset"),
             CpuCfsQuota: cmd.Int("cpu"),
         }
-        Run(tty, cmdArray, res)
+        volume := cmd.String("v")
+        containerName := cmd.String("name")
+
+        Run(tty, cmdArray, res, volume, containerName, imageName)
         return nil
     },
 }
