@@ -14,10 +14,31 @@ func NewWorkspace(containerId, imageName, volume string) {
     createWork(containerId)
     createMerged(containerId)
     mountOverlay2(containerId)
+
+    if volume != "" {
+        mountPath := utils.GetMerged(containerId)
+        hostPath, containerPath, err := volumeExtract(volume)
+        if err != nil {
+            log.Errorf("error extracting volume paths: %v", err)
+        }
+        mountVolume(mountPath, hostPath, containerPath)
+    }
 }
 
 func DeleteWorkspace(containerId string, volume string) {
     log.Infof("cleaning up workspace...")
+    // unmount volume first to avoid cleanup propagation
+    if volume != "" {
+        _, containerPath, err := volumeExtract(volume)
+        if err != nil {
+            log.Errorf("error extracting volume paths: %v", err)
+            // must halt to avoid volume data being deleted
+            return
+        }
+        mountPath := utils.GetMerged(containerId)
+        unmountVolume(mountPath, containerPath)
+    }
+
     // unmount overlay fs
     unmountOverlay2(containerId)
     // cleanup folders

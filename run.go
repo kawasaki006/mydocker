@@ -17,7 +17,7 @@ func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, volume, co
     parent, writePipe := container.NewParentProcess(tty, volume, containerId, imageName)
     // defer overlayfs cleanup
     // TODO: volume = " " for now
-    defer container.DeleteWorkspace(containerId, " ")
+    defer container.DeleteWorkspace(containerId, volume)
     if parent == nil {
         log.Errorf("Init process eror")
         return
