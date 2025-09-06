@@ -19,6 +19,10 @@ var runCommand = &cli.Command{
             Name: "ti",
             Usage: "enable tty",
 		},
+		&cli.BoolFlag{
+            Name: "d",
+            Usage: "detach container",
+		},
 		&cli.StringFlag{
             Name: "m",
             Usage: "memory limit, e.g.: -m 100m",
@@ -53,6 +57,10 @@ var runCommand = &cli.Command{
 
         // flags
         tty := cmd.Bool("ti")
+        detach := cmd.Bool("d")
+        if tty && detach {
+            return fmt.Errorf("ti and d cannot be provided simultaneously")
+        }
         res := &subsystems.ResourceConfig{
             MemoryLimit: cmd.String("m"),
             CpuSet:      cmd.String("cpuset"),
@@ -75,5 +83,15 @@ var initCommand = &cli.Command{
         log.Infof("command: %s", c)
         err := container.RunContainerInitProcess(c, nil)
         return err
+    },
+}
+
+var listCommand = &cli.Command{
+    Name: "ps",
+    Usage: "list all containers",
+    Action: func(ctx context.Context, cmd *cli.Command) error {
+        log.Infof("listing all containers...")
+        listContainers()
+        return nil
     },
 }

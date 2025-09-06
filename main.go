@@ -15,7 +15,8 @@ func main() {
 		Commands: []*cli.Command{
 			runCommand,
             initCommand,
-		},
+            listCommand,
+        },
         Before: func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
             // log as json
             log.SetFormatter(&log.JSONFormatter{})

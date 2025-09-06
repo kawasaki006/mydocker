@@ -12,12 +12,11 @@ import (
 
 func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, volume, containerName, imageName string) {
     // TODO: random id generation
-    containerId := "poyocontainer"
+    containerId := container.GenerateContainerId()
     
     parent, writePipe := container.NewParentProcess(tty, volume, containerId, imageName)
     // defer overlayfs cleanup
     // TODO: volume = " " for now
-    defer container.DeleteWorkspace(containerId, volume)
     if parent == nil {
         log.Errorf("Init process eror")
         return
@@ -30,7 +29,6 @@ func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, volume, co
 
     // set up cgroup and add new contaier proc in
     cgroupManager := cgroups.NewCgroupManager("mydocker-cgroup")
-    defer cgroupManager.Destroy()
     cgroupManager.Set(res)
     cgroupManager.Apply(parent.Process.Pid)
 
@@ -39,8 +37,28 @@ func Run(tty bool, cmdArray []string, res *subsystems.ResourceConfig, volume, co
     // close pipe
     writePipe.Close()
 
-    parent.Wait()
-    //os.Exit(-1)
+    // record container info
+    _, err := container.RecordContainerInfo(parent.Process.Pid, cmdArray, containerName, containerId, volume)
+    if err != nil {
+        log.Errorf("error recording container info: %v", err)
+        return
+    }
+    
+    if tty {
+        parent.Wait()
+        container.DeleteWorkspace(containerId, volume)
+        container.DeleteContainerInfo(containerId)
+        cgroupManager.Destroy()
+    }
+
+    go func() {
+        if !tty {
+            _, _ = parent.Process.Wait()
+        }
+        container.DeleteWorkspace(containerId, volume)
+        container.DeleteContainerInfo(containerId)
+        cgroupManager.Destroy()
+    }()
 }
 
 func sendInitCommand(cmdArray []string, writePipe *os.File) {
