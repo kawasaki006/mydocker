@@ -16,6 +16,8 @@ func main() {
 			runCommand,
             initCommand,
             listCommand,
+            logCommand,
+            execCommand,
         },
         Before: func(ctx context.Context, cmd *cli.Command) (context.Context, error) {
             // log as json

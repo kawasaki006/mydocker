@@ -1,7 +1,7 @@
 package main
 
 import (
-    //"os"
+    "os"
     "fmt"
     "context"
 
@@ -92,6 +92,38 @@ var listCommand = &cli.Command{
     Action: func(ctx context.Context, cmd *cli.Command) error {
         log.Infof("listing all containers...")
         listContainers()
+        return nil
+    },
+}
+
+var logCommand = &cli.Command{
+    Name: "logs",
+    Usage: "print logs of a container",
+    Action: func(ctx context.Context, cmd *cli.Command) error {
+        if cmd.Args().Len() < 1 {
+            return fmt.Errorf("please enter container id")
+        }
+        containerId := cmd.Args().Get(0)
+        log.Infof("logging container %s...", containerId)
+        logContainer(containerId)
+        return nil
+    },
+}
+
+var execCommand = &cli.Command{
+    Name: "exec",
+    Usage: "exec a command into container",
+    Action: func(ctx context.Context, cmd *cli.Command) error {
+        if os.Getenv(EnvExecPid) != "" {
+            log.Infof("pid callback pid %v", os.Getgid())
+            return nil
+        }
+        if cmd.Args().Len() < 2 {
+            return fmt.Errorf("please enter container id and command")
+        }
+        containerId := cmd.Args().Get(0)
+        cmdArray := cmd.Args().Tail()
+        ExecContainer(containerId, cmdArray)
         return nil
     },
 }

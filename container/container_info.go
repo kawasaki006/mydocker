@@ -18,6 +18,7 @@ const (
     InfoLocation = "/var/lib/mydocker/containers/"
     ConfigName   = "config.json"
     IdLength     = 10
+    LogFile      = "%s-json.log"
 )
 
 type ContainerInfo struct {
@@ -54,8 +55,11 @@ func RecordContainerInfo(containerPid int, commandArray []string, containerName,
 
     // mkdir for container info
     dirPath := path.Join(InfoLocation, containerId)
-    if err := os.Mkdir(dirPath, 0622); err != nil {
-        return containerInfo, fmt.Errorf("error creating container info dir at [%s]: %v", dirPath, err)
+    if _, err := os.Stat(dirPath); err != nil {
+        // dir not exist, make it
+        if err := os.Mkdir(dirPath, 0622); err != nil {
+            return containerInfo, fmt.Errorf("error creating container info dir at [%s]: %v", dirPath, err)
+        }
     }
     // write file to path
     filePath := path.Join(dirPath, ConfigName)
@@ -91,4 +95,6 @@ func randStringBytes(n int) string {
     return string(b)
 }
 
-
+func GetLogFile(containerId string) string {
+    return fmt.Sprintf(LogFile, containerId)
+}
